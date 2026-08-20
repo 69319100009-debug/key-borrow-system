@@ -1,65 +1,107 @@
-// URL ของ Google Apps Script
+// ========================================
+// ระบบยืม-คืนกุญแจแผนก
+// ========================================
+
+
+// URL Google Apps Script
+
 const GOOGLE_SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycbxrn45dWt_sYU6Cw5fbWJzdvylfiA8T6g_x-3cjhQ_jLkZMpbWaaPeUxWkgLj-YAsSEKg/exec";
 
 
-// เก็บข้อมูลในเครื่อง
+// โหลดข้อมูลที่เก็บไว้ในเครื่อง
+
 let data =
-    JSON.parse(localStorage.getItem("keyData")) || [];
+    JSON.parse(
+        localStorage.getItem("keyData")
+    ) || [];
 
 
+// ========================================
 // บันทึกข้อมูล
+// ========================================
+
 async function saveData() {
 
-    let name =
-        document.getElementById("name").value;
+    const name =
+        document.getElementById("name").value.trim();
 
-    let studentId =
-        document.getElementById("studentId").value;
+    const studentId =
+        document.getElementById("studentId").value.trim();
 
-    let level =
+    const email =
+        document.getElementById("email").value.trim();
+
+    const level =
         document.getElementById("level").value;
 
-    let room =
+    const room =
         document.getElementById("room").value;
 
-    let action =
+    const action =
         document.getElementById("action").value;
 
 
     // ตรวจสอบข้อมูล
+
     if (
-        name == "" ||
-        studentId == "" ||
-        level == "" ||
-        room == ""
+        name === "" ||
+        studentId === "" ||
+        email === "" ||
+        level === "" ||
+        room === "" ||
+        action === ""
     ) {
 
-        alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+        alert(
+            "กรุณากรอกข้อมูลให้ครบถ้วน"
+        );
 
         return;
     }
 
 
-    // ตรวจสอบห้องที่กำลังยืม
-    let current =
+    // ตรวจสอบรูปแบบอีเมล
+
+    const emailPattern =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+    if (!emailPattern.test(email)) {
+
+        alert(
+            "กรุณากรอกอีเมลให้ถูกต้อง"
+        );
+
+        return;
+    }
+
+
+    // ตรวจสอบห้องที่กำลังถูกยืม
+
+    const borrowers =
         getCurrentBorrowers();
 
-    let alreadyBorrowed =
-        current.find(function(item) {
 
-            return item.room == room;
+    const alreadyBorrowed =
+        borrowers.find(function(item) {
+
+            return item.room === room;
 
         });
 
 
+    // ถ้าจะยืม แต่ห้องถูกยืมอยู่แล้ว
+
     if (
-        action == "ยืม" &&
+        action === "ยืม" &&
         alreadyBorrowed
     ) {
 
         alert(
-            "ห้องนี้กำลังถูกยืมโดย " +
+            "ห้อง " +
+            room +
+            " กำลังถูกยืมโดย " +
             alreadyBorrowed.name
         );
 
@@ -67,28 +109,41 @@ async function saveData() {
     }
 
 
+    // ถ้าจะคืน แต่ไม่มีผู้ยืม
+
     if (
-        action == "คืน" &&
+        action === "คืน" &&
         !alreadyBorrowed
     ) {
 
-        alert("ห้องนี้ยังไม่มีผู้ยืม");
+        alert(
+            "ห้อง " +
+            room +
+            " ยังไม่มีผู้ยืม"
+        );
 
         return;
     }
 
 
     // วันที่และเวลา
-    let date =
-        new Date().toLocaleString("th-TH");
+
+    const now =
+        new Date();
+
+    const date =
+        now.toLocaleString("th-TH");
 
 
-    // ข้อมูลที่จะส่งไป Google Sheets
-    let record = {
+    // ข้อมูล
+
+    const record = {
 
         name: name,
 
         studentId: studentId,
+
+        email: email,
 
         level: level,
 
@@ -97,54 +152,106 @@ async function saveData() {
         action: action,
 
         date: date
+
     };
 
 
+    // ========================================
     // ส่งข้อมูลไป Google Sheets
+    // ========================================
+
     try {
 
         await fetch(
+
             GOOGLE_SCRIPT_URL,
+
             {
+
                 method: "POST",
 
                 mode: "no-cors",
 
                 headers: {
+
                     "Content-Type":
-                        "text/plain;charset=utf-8"
+                    "text/plain;charset=utf-8"
+
                 },
 
-                body: JSON.stringify(record)
+                body:
+                    JSON.stringify(record)
+
             }
+
         );
 
 
-        // เก็บข้อมูลในเครื่องด้วย
+        // เก็บข้อมูลในเครื่อง
+
         data.push(record);
 
+
         localStorage.setItem(
+
             "keyData",
+
             JSON.stringify(data)
+
         );
 
 
-        alert(
-            "บันทึกข้อมูลเรียบร้อยแล้ว"
-        );
+        // แจ้งเตือน
+
+        if (action === "ยืม") {
+
+            alert(
+                "✅ ยืมกุญแจเรียบร้อยแล้ว"
+            );
+
+        } else {
+
+            alert(
+                "✅ คืนกุญแจเรียบร้อยแล้ว"
+            );
+
+        }
 
 
-        // ล้างข้อมูล
-        document.getElementById("name").value = "";
+        // ล้างแบบฟอร์ม
 
-        document.getElementById("studentId").value = "";
+        document.getElementById(
+            "name"
+        ).value = "";
 
-        document.getElementById("level").value = "";
 
-        document.getElementById("room").value = "";
+        document.getElementById(
+            "studentId"
+        ).value = "";
+
+
+        document.getElementById(
+            "email"
+        ).value = "";
+
+
+        document.getElementById(
+            "level"
+        ).value = "";
+
+
+        document.getElementById(
+            "room"
+        ).value = "";
+
+
+        document.getElementById(
+            "action"
+        ).value = "";
 
 
         // แสดงข้อมูล
+
         showData();
 
     }
@@ -154,7 +261,7 @@ async function saveData() {
         console.error(error);
 
         alert(
-            "ไม่สามารถเชื่อมต่อ Google Sheets ได้"
+            "เกิดข้อผิดพลาดในการเชื่อมต่อ"
         );
 
     }
@@ -162,7 +269,10 @@ async function saveData() {
 }
 
 
+// ========================================
 // หาผู้ที่กำลังยืม
+// ========================================
+
 function getCurrentBorrowers() {
 
     let borrowers = [];
@@ -170,27 +280,27 @@ function getCurrentBorrowers() {
 
     data.forEach(function(item) {
 
-        let old =
-            borrowers.find(function(person) {
+        const index =
+            borrowers.findIndex(
+                function(person) {
 
-                return person.room == item.room;
+                    return person.room === item.room;
 
-            });
+                }
+            );
 
 
-        if (old) {
+        if (index !== -1) {
 
-            borrowers =
-                borrowers.filter(function(person) {
-
-                    return person.room != item.room;
-
-                });
+            borrowers.splice(
+                index,
+                1
+            );
 
         }
 
 
-        if (item.action == "ยืม") {
+        if (item.action === "ยืม") {
 
             borrowers.push(item);
 
@@ -200,24 +310,35 @@ function getCurrentBorrowers() {
 
 
     return borrowers;
+
 }
 
 
+// ========================================
 // แสดงผู้ที่กำลังยืม
+// ========================================
+
 function showBorrowers() {
 
-    let table =
+    const table =
         document.getElementById(
             "borrowTable"
         );
 
 
+    if (!table) {
+        return;
+    }
+
+
     table.innerHTML = "";
 
 
-    let borrowers =
+    const borrowers =
         getCurrentBorrowers();
 
+
+    // จำนวน
 
     document.getElementById(
         "borrowed"
@@ -228,69 +349,102 @@ function showBorrowers() {
     document.getElementById(
         "available"
     ).innerText =
-        9 - borrowers.length;
+        Math.max(
+            0,
+            9 - borrowers.length
+        );
 
 
-    if (borrowers.length == 0) {
+    // ไม่มีผู้ยืม
+
+    if (borrowers.length === 0) {
 
         table.innerHTML = `
+
             <tr>
-                <td colspan="7" class="empty">
+
+                <td
+                    colspan="7"
+                    class="empty"
+                >
+
                     🟢 ขณะนี้ไม่มีกุญแจถูกยืม
+
                 </td>
+
             </tr>
+
         `;
 
         return;
     }
 
 
+    // แสดงข้อมูล
+
     borrowers.forEach(
         function(item, index) {
 
-            let row =
+            const row =
                 table.insertRow();
 
 
-            row.insertCell(0).innerHTML =
+            row.insertCell(0).innerText =
                 index + 1;
 
 
-            row.insertCell(1).innerHTML =
+            row.insertCell(1).innerText =
                 item.name;
 
 
-            row.insertCell(2).innerHTML =
+            row.insertCell(2).innerText =
                 item.studentId;
 
 
-            row.insertCell(3).innerHTML =
+            row.insertCell(3).innerText =
                 item.level;
 
 
-            row.insertCell(4).innerHTML =
+            row.insertCell(4).innerText =
                 item.room;
 
 
-            row.insertCell(5).innerHTML =
+            row.insertCell(5).innerText =
                 item.date;
 
 
             row.insertCell(6).innerHTML =
-                '<span class="borrow">กำลังยืม</span>';
+
+                `
+                <span class="borrow">
+                    กำลังยืม
+                </span>
+                `;
 
         }
     );
+
 }
 
 
+// ========================================
 // แสดงประวัติ
+// ========================================
+
 function showData() {
 
-    let table =
+    const table =
         document.getElementById(
             "dataTable"
         );
+
+
+    if (!table) {
+
+        showBorrowers();
+
+        return;
+    }
 
 
     table.innerHTML = "";
@@ -299,44 +453,58 @@ function showData() {
     data.forEach(
         function(item, index) {
 
-            let row =
+            const row =
                 table.insertRow();
 
 
-            row.insertCell(0).innerHTML =
+            row.insertCell(0).innerText =
                 index + 1;
 
 
-            row.insertCell(1).innerHTML =
+            row.insertCell(1).innerText =
                 item.name;
 
 
-            row.insertCell(2).innerHTML =
+            row.insertCell(2).innerText =
                 item.studentId;
 
 
-            row.insertCell(3).innerHTML =
+            row.insertCell(3).innerText =
                 item.level;
 
 
-            row.insertCell(4).innerHTML =
+            row.insertCell(4).innerText =
                 item.room;
 
 
-            if (item.action == "ยืม") {
+            if (
+                item.action === "ยืม"
+            ) {
 
                 row.insertCell(5).innerHTML =
-                    '<span class="borrow">ยืมกุญแจ</span>';
 
-            } else {
+                    `
+                    <span class="borrow">
+                        ยืมกุญแจ
+                    </span>
+                    `;
+
+            }
+
+            else {
 
                 row.insertCell(5).innerHTML =
-                    '<span class="return">คืนกุญแจ</span>';
+
+                    `
+                    <span class="return">
+                        คืนกุญแจ
+                    </span>
+                    `;
 
             }
 
 
-            row.insertCell(6).innerHTML =
+            row.insertCell(6).innerText =
                 item.date;
 
         }
@@ -344,8 +512,27 @@ function showData() {
 
 
     showBorrowers();
+
 }
 
 
-// เริ่มระบบ
-showData();
+// ========================================
+// ปุ่มบันทึก
+// ========================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        document.getElementById(
+            "saveBtn"
+        ).addEventListener(
+            "click",
+            saveData
+        );
+
+
+        showData();
+
+    }
+);
