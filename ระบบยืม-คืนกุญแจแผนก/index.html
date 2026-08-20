@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบยืม-คืนกุญแจแผนก</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <div class="header-content">
+        <div class="icon">🔑</div>
+        <div>
+            <h1>ระบบยืม-คืนกุญแจแผนก</h1>
+            <p>ระบบจัดการและตรวจสอบการยืม-คืนกุญแจห้องเรียน</p>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- สถานะ -->
+    <div class="status">
+
+        <div class="status-card blue">
+            <div class="status-icon">🔑</div>
+            <div>
+                <p>ห้องทั้งหมด</p>
+                <h2 id="total">9</h2>
+            </div>
+        </div>
+
+        <div class="status-card green">
+            <div class="status-icon">✓</div>
+            <div>
+                <p>กุญแจว่าง</p>
+                <h2 id="available">9</h2>
+            </div>
+        </div>
+
+        <div class="status-card red">
+            <div class="status-icon">!</div>
+            <div>
+                <p>กำลังถูกยืม</p>
+                <h2 id="borrowed">0</h2>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- แบบฟอร์ม -->
+    <div class="box">
+
+        <h2>📝 บันทึกการยืม-คืน</h2>
+
+        <p class="description">
+            กรุณากรอกข้อมูลให้ครบถ้วนก่อนบันทึกข้อมูล
+        </p>
+
+        <div class="form">
+
+            <div>
+                <label>ชื่อ-นามสกุล</label>
+                <input type="text" id="name" placeholder="กรอกชื่อ-นามสกุล">
+            </div>
+
+            <div>
+                <label>รหัสนักศึกษา</label>
+                <input type="text" id="studentId" placeholder="กรอกรหัสนักศึกษา">
+            </div>
+
+            <div>
+                <label>ระดับชั้นศึกษา</label>
+                <select id="level">
+                    <option value="">-- เลือกระดับชั้น --</option>
+                    <option value="ปวช.1/1">ปวช.1/1</option>
+                    <option value="ปวช.1/2">ปวช.1/2</option>
+                    <option value="ปวช.2/1">ปวช.2/1</option>
+                    <option value="ปวช.2/2">ปวช.2/2</option>
+                    <option value="ปวช.3/1">ปวช.3/1</option>
+                    <option value="ปวช.3/2">ปวช.3/2</option>
+                    <option value="ปวส.1">ปวส.1</option>
+                    <option value="ปวส.2">ปวส.2</option>
+                </select>
+            </div>
+
+            <div>
+                <label>ห้อง / แผนก</label>
+                <select id="room">
+                    <option value="">-- เลือกห้อง --</option>
+                    <option value="ห้อง 121">ห้อง 121</option>
+                    <option value="ห้อง 122">ห้อง 122</option>
+                    <option value="ห้อง 124">ห้อง 124</option>
+                    <option value="ห้อง 125">ห้อง 125</option>
+                    <option value="ห้อง 141">ห้อง 141</option>
+                    <option value="ห้อง 142">ห้อง 142</option>
+                    <option value="ห้อง 143">ห้อง 143</option>
+                    <option value="ห้อง 144">ห้อง 144</option>
+                    <option value="ห้อง 145">ห้อง 145</option>
+                </select>
+            </div>
+
+            <div>
+                <label>ประเภทการทำรายการ</label>
+                <select id="action">
+                    <option value="ยืม">🔴 ยืมกุญแจ</option>
+                    <option value="คืน">🟢 คืนกุญแจ</option>
+                </select>
+            </div>
+
+        </div>
+
+        <button class="save-btn" onclick="saveData()">
+            บันทึกข้อมูล
+        </button>
+
+    </div>
+
+    <!-- ผู้ที่กำลังยืม -->
+    <div class="box">
+
+        <h2>🔴 ผู้ที่กำลังยืมกุญแจ</h2>
+
+        <p class="description">
+            รายชื่อผู้ที่ถือกุญแจอยู่ในปัจจุบัน
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ลำดับ</th>
+                    <th>ชื่อ-นามสกุล</th>
+                    <th>รหัสนักศึกษา</th>
+                    <th>ระดับชั้น</th>
+                    <th>ห้อง</th>
+                    <th>เวลาที่ยืม</th>
+                    <th>สถานะ</th>
+                </tr>
+            </thead>
+
+            <tbody id="borrowTable">
+            </tbody>
+        </table>
+
+    </div>
+
+    <!-- ประวัติ -->
+    <div class="box">
+
+        <h2>📋 ประวัติการยืม-คืน</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ลำดับ</th>
+                    <th>ชื่อ-นามสกุล</th>
+                    <th>รหัสนักศึกษา</th>
+                    <th>ระดับชั้น</th>
+                    <th>ห้อง</th>
+                    <th>รายการ</th>
+                    <th>วันที่และเวลา</th>
+                </tr>
+            </thead>
+
+            <tbody id="dataTable">
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+<footer>
+    <p>ระบบยืม-คืนกุญแจแผนก © 2026</p>
+</footer>
+
+<script src="script.js"></script>
+
+</body>
+</html>
